@@ -9,9 +9,6 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
-    
     <style>
         body { 
             -webkit-tap-highlight-color: transparent; 
@@ -96,6 +93,7 @@
         </div>
     </div>
 
+    <!-- INITIALIZING SCREEN -->
     <div id="globalLoader" class="fixed inset-0 bg-[#f4f7fe] dark-target z-[999] flex flex-col items-center justify-center p-6 text-center">
         <div class="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-5"></div>
         <p class="text-indigo-600 font-black tracking-widest text-sm animate-pulse uppercase">INITIALIZING...</p>
@@ -171,12 +169,7 @@
                     <h2 class="text-2xl font-black text-gray-800 tracking-tight">Directory</h2>
                     <p class="text-10 font-black text-gray-400 uppercase tracking-widest mt-1">All Students</p>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <button onclick="generateStudentsPDF()" class="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 px-4 py-3 rounded-2xl font-black text-xs shadow-sm active:scale-95 transition flex items-center border border-gray-200 dark:border-slate-700 uppercase tracking-wider">
-                        <i class="fas fa-file-pdf mr-2 text-red-500 text-sm"></i> Get PDF Report
-                    </button>
-                    <button onclick="openModal()" class="bg-indigo-600 text-white px-4 py-3 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition flex items-center uppercase tracking-wider"><i class="fas fa-user-plus mr-2"></i> ADD NEW</button>
-                </div>
+                <button onclick="openModal()" class="bg-indigo-600 text-white px-5 py-3 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition flex items-center"><i class="fas fa-user-plus mr-2"></i> ADD NEW</button>
             </div>
             <div class="relative mb-6">
                 <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
@@ -318,6 +311,7 @@
             
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-xl font-black text-gray-800 uppercase" id="modalTitle">Registration</h3>
+                <!-- NAYA LOCK/UNLOCK ICON YAHAN HAI -->
                 <div class="flex items-center space-x-3">
                     <button type="button" id="modalLockBtn" onclick="toggleModalLock()" class="hidden w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 active:scale-90 shadow-sm transition"><i id="modalLockIcon" class="fas fa-lock"></i></button>
                     <button type="button" onclick="closeModal()" class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 active:scale-90"><i class="fas fa-times"></i></button>
@@ -373,6 +367,7 @@
         </div>
     </div>
 
+    <!-- JAVASCRIPT LOGIC -->
     <script>
         // TUMHARA NAYA GOOGLE SCRIPT URL YAHAN HAI
         const API_URL = 'https://script.google.com/macros/s/AKfycbzVPUbLYvshv0V5AjWIRHUaunDye5TVe6UZ31qPR-zFpy3NWveGwqsrMASF7d1o-yWIJQ/exec';
@@ -413,7 +408,7 @@
             if(cachedData) {
                 appData = JSON.parse(cachedData);
                 document.getElementById('globalLoader').style.display = 'none';
-                initSettingsUI(); updateDashboard(); renderStudents(); renderDefaurters();
+                initSettingsUI(); updateDashboard(); renderStudents(); renderDefaulters();
             }
 
             // Step 2: Fetch Fresh Data in Background
@@ -834,104 +829,6 @@
             sendSuccessMsg(st.name, st.phone, amt, mnth, currentMode);
             
             gasApi('savePayment', pay);
-        }
-
-        // AUTOMATIC HIGH-QUALITY PDF GENERATION FUNCTION
-        function generateStudentsPDF() {
-            if (!appData.students || appData.students.length === 0) {
-                alert("NO STUDENT DATA AVAILABLE TO GENERATE REPORT!");
-                return;
-            }
-            
-            try {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF('p', 'mm', 'a4');
-                
-                // Header Styling
-                doc.setFillColor(99, 102, 241); // Indigo color matching app
-                doc.rect(0, 0, 210, 40, 'F');
-                
-                // Title
-                doc.setTextColor(255, 255, 255);
-                doc.setFont('Helvetica', 'bold');
-                doc.setFontSize(18);
-                doc.text("DEEPAK SCIENCE ZONE", 14, 18);
-                
-                // Subtitle
-                doc.setFont('Helvetica', 'normal');
-                doc.setFontSize(10);
-                doc.text("STUDENT DIRECTORY REPORT & FEES DATABASE", 14, 25);
-                
-                // Meta Info (Right aligned)
-                doc.setFontSize(9);
-                const todayStr = document.getElementById('headerDate').innerText || new Date().toLocaleDateString('en-GB');
-                doc.text(`Generated On: ${todayStr}`, 196, 18, { align: 'right' });
-                doc.text(`Total Strength: ${appData.students.length} Students`, 196, 25, { align: 'right' });
-                
-                // Prepare Table Rows
-                const rows = [];
-                // Sorting systematically by Class name
-                const sortedStudents = appData.students.slice().sort((a, b) => (a.class || '').localeCompare(b.class || ''));
-                
-                sortedStudents.forEach((st, idx) => {
-                    rows.push([
-                        idx + 1,
-                        st.id || `STU-${String(idx+1).padStart(3, '0')}`,
-                        (st.name || '').toUpperCase(),
-                        (st.class || '').toUpperCase(),
-                        (st.gender || '').toUpperCase(),
-                        st.phone ? `+91 ${st.phone}` : 'N/A',
-                        `Rs. ${st.fee || '0'}`
-                    ]);
-                });
-                
-                // Generate Dynamic Elegant Table
-                doc.autoTable({
-                    head: [['S.No.', 'Student ID', 'Student Name', 'Class Tiers', 'Gender', 'WhatsApp Mobile', 'Monthly Fee']],
-                    body: rows,
-                    startY: 48,
-                    theme: 'striped',
-                    headStyles: {
-                        fillColor: [79, 70, 229],
-                        textColor: [255, 255, 255],
-                        fontStyle: 'bold',
-                        fontSize: 9,
-                        halign: 'left'
-                    },
-                    bodyStyles: {
-                        fontSize: 9,
-                        textColor: [30, 41, 59],
-                        font: 'Helvetica'
-                    },
-                    columnStyles: {
-                        0: { cellWidth: 12 },
-                        1: { cellWidth: 22 },
-                        2: { cellWidth: 50, fontStyle: 'bold' },
-                        3: { cellWidth: 25 },
-                        4: { cellWidth: 20 },
-                        5: { cellWidth: 32 },
-                        6: { cellWidth: 25, halign: 'right' }
-                    },
-                    alternateRowStyles: {
-                        fillColor: [248, 250, 252]
-                    },
-                    margin: { top: 45, left: 14, right: 14 },
-                    didDrawPage: function (data) {
-                        // Footer on each page
-                        doc.setFontSize(8);
-                        doc.setTextColor(148, 163, 184);
-                        doc.text("Page " + doc.internal.getNumberOfPages(), 14, doc.internal.pageSize.height - 10);
-                        doc.text("Automated Secure System Database Report", 196, doc.internal.pageSize.height - 10, { align: 'right' });
-                    }
-                });
-                
-                // Save/Download PDF Trigger
-                doc.save(`Student_Report_${todayStr.replace(/\//g, '-')}.pdf`);
-                showToast('PDF REPORT DOWNLOADED');
-            } catch (err) {
-                console.error("PDF generation failed:", err);
-                alert("Error generating PDF: " + err.message);
-            }
         }
     </script>
 </body>
